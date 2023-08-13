@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import db
 import utils
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 connection = db.connect_to_database()
 app.secret_key = "SUPER-SECRET"
+limiter = Limiter(app=app, key_func=get_remote_address, default_limits=["50 per minute"])
 
 @app.route('/')
 def index():
@@ -16,6 +19,7 @@ def index():
     return "You are not logged in."
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute") 
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -38,11 +42,15 @@ def login():
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("10 per minute") 
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
+        if not utils.is_strong_password(password):
+            flash("Sorry You Entered a weak Password Please Choose a stronger one", "danger")
+            return render_template('register.html')
+        
         user = db.get_user(connection, username)
         if user:
             flash("Username already exists. Please choose a different username.", "danger")
