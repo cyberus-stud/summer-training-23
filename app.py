@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import db
+import utils
 
 app = Flask(__name__)
 connection = db.connect_to_database()
@@ -8,7 +9,10 @@ app.secret_key = "SUPER-SECRET"
 @app.route('/')
 def index():
     if 'username' in session:
-        return f"Welcome, {session['username']}!"
+        if session['username'] == 'admin':
+            return list(db.get_all_users(connection))
+        else:
+            return f"Welcome, {session['username']}!"
     return "You are not logged in."
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -17,13 +21,18 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        user = db.get_user(connection, username, password)
-
+        user = db.get_user(connection, username)
+        
         if user:
-            session['username'] = user[1]
-            return redirect(url_for('index'))
+            if utils.is_password_match(password, user[2]):
+                session['username'] = user[1]
+                return redirect(url_for('index'))
+            else:
+                flash("Password dose not match", "danger")
+                return render_template('login.html')
+            
         else:
-            flash("Wrong Cardinals", "danger")
+            flash("Invalid username", "danger")
             return render_template('login.html')
 
     return render_template('login.html')
@@ -34,13 +43,14 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        user = db.get_user_by_username(connection, username)
+        user = db.get_user(connection, username)
         if user:
-            return "Username already exists. Please choose a different username."
+            flash("Username already exists. Please choose a different username.", "danger")
+            return render_template('register.html')
         else:
             db.add_user(connection, username, password)
             return redirect(url_for('login'))
-    flash("Test", "success")
+
     return render_template('register.html')
 
 @app.route('/logout')
@@ -50,4 +60,5 @@ def logout():
 
 if __name__ == '__main__':
     db.init_db(connection)
+    db.seed_admin_user(connection)
     app.run(debug=True)
