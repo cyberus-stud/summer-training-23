@@ -1,115 +1,53 @@
-## variables
-#name = "Ahmed"
-#age = 20
-#hobbies = ["Reading", "Code Refactoring", "Writing"]
-#print(name)
-#print(age)
-#print(hobbies)
-
-## input
-#name = input("Enter Your Name: ")
-#age  = int(input("Enter Your Age: "))
-#print(type(name), name)
-#print(type(age), age)
-
-## Arithmetic Operations
-#print(2 + 3)
-#print(4 - 2)
-#print(9 / 2)
-#print(9 // 2)
-#print (9 % 2)
-
-## Conditions
-#age  = int(input("Enter Your Age: "))
-#if age > 20:
-#	print("You Are a Grown person Now go Study Physics")
-#elif age >= 18:
-#	print("You Are an Adult go Play Valorant")
-#elif age == 16:
-#	print("You Are in mid situation Now Go Delete TikTok")
-#else :
-#	print("You Still a child go Play some Minecraft")
-
-## Loops
-#x = 1
-#while x < 10:
-#	print(x)
-#	x += 1
-
-#for i in range(10):
-#	print(i)
-
-#for i in range(2, 10, 2):
-#	print(i)
-
-#colors = ["red", "blue", "white"]
-#for color in colors:
-#	print("My Favorite Color is: " + color)
-#print("red" in colors)
-
-# Functions
-#def double(num):
-#	return num * 2
-
-#def getNumber(message):
-#	try:
-#		return int(input(message))
-#	except:
-#		return 0
-
-#def printHelp():
-#	print("Welcome To Our App")
-#	print("Developed by Cyberus")
-
-#print(double(2))
-#print(getNumber("Enter Your Age: "))
-#print(getNumber(message="Enter Your Age: "))
-#printHelp()
-
-# Import Example
-#import math
-
-#print(math.sqrt(4))
-
-
-#from flask import Flask, request
-
-#app = Flask(__name__)
-
-#@app.route("/hello")
-#def hello():
-#    return "Hello World!"
-
-#@app.route("/say-my-name", methods=["POST", "GET"])
-#def say_my_name():
-#    return "Hello: " + request.args.get("name")
-
-
-
-#if __name__ == "__main__":
-#    app.run(debug=True)
-
-
-
-from flask import Flask, request
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import db
 
 app = Flask(__name__)
+connection = db.connect_to_database()
+app.secret_key = "SUPER-SECRET"
 
-students = []
+@app.route('/')
+def index():
+    if 'username' in session:
+        return f"Welcome, {session['username']}!"
+    return "You are not logged in."
 
-@app.route("/add-student", methods=["POST"])
-def add_student():
-    name = request.json["name"]
-    age = request.json["age"]
-    students.append({"name": name, "age": age})
-    return "User Added Successfully"
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
+        user = db.get_user(connection, username, password)
 
-@app.route("/get-students")
-def get_students():
-    return students
+        if user:
+            session['username'] = user[1]
+            return redirect(url_for('index'))
+        else:
+            flash("Wrong Cardinals", "danger")
+            return render_template('login.html')
 
+    return render_template('login.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-if __name__ == "__main__":
+        user = db.get_user_by_username(connection, username)
+        if user:
+            return "Username already exists. Please choose a different username."
+        else:
+            db.add_user(connection, username, password)
+            return redirect(url_for('login'))
+    flash("Test", "success")
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    db.init_db(connection)
     app.run(debug=True)
