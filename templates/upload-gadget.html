@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+		<title>Upload Gadget</title>
+	</head>
+	<body class="centered-body">
+		<div class="container">
+			{% include 'includes/alert.html' %}
+			<div class="row justify-content-center">
+				<div class="col-md-6 col-lg-4 form-container p-4 mt-5">
+					<h2 class="text-center mb-4">Upload gadget</h2>
+					<form
+						class="register-form"
+						method="post"
+						action="{{ url_for('uploadGadget') }}"
+						enctype="multipart/form-data"
+					>
+						<div class="mb-3">
+							<input type="text" class="form-control" placeholder="Title" required name="title" />
+						</div>
+						<div class="mb-3">
+							<input type="number" class="form-control" placeholder="90" required name="price" />
+						</div>
+						<div class="mb-3">
+							<textarea
+								type=""
+								class="form-control"
+								placeholder="Description"
+								required
+								name="description"
+							></textarea>
+						</div>
+						<div class="mb-3">
+							<input
+								type="file"
+								accept="image/*"
+								class="form-control"
+								placeholder="Title"
+								required
+								name="image"
+							/>
+						</div>
+						<button type="submit" class="btn btn-primary w-100">Upload</button>
+					</form>
+				</div>
+			</div>
+		</div>
+		<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/close-all-alerts.js') }}"></script>
+	</body>
+</html>

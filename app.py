@@ -15,7 +15,7 @@ def index():
         if session['username'] == 'admin':
             return list(db.get_all_users(connection))
         else:
-            return f"Welcome, {session['username']}!"
+            return render_template("index.html", gadgets=db.get_all_gadgets(connection))
     return "You are not logged in."
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -30,6 +30,7 @@ def login():
         if user:
             if utils.is_password_match(password, user[2]):
                 session['username'] = user[1]
+                session['user_id'] = user[0]
                 return redirect(url_for('index'))
             else:
                 flash("Password dose not match", "danger")
@@ -61,6 +62,25 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/upload-gadget', methods=['GET', 'POST'])
+@limiter.limit("10 per minute") 
+def uploadGadget():
+    if not 'user_id' in session:
+        flash("Please Login to do this action", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        price = request.form['price']
+        gadgetImage = request.files['image']
+        image_url = f"uploads/{gadgetImage.filename}"
+        gadgetImage.save("static/" + image_url)
+        user_id = session['user_id']
+        db.add_gadget(connection, user_id, title, description, price, image_url)
+        return redirect(url_for('index'))
+    return render_template('upload-gadget.html')
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
@@ -69,4 +89,5 @@ def logout():
 if __name__ == '__main__':
     db.init_db(connection)
     db.seed_admin_user(connection)
+    db.init_gadget_table(connection)
     app.run(debug=True)

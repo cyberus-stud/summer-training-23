@@ -48,3 +48,43 @@ def seed_admin_user(connection):
         add_user(connection, admin_username, admin_password)
         print("Admin user seeded successfully.")
 
+def init_gadget_table(connection):
+    cursor = connection.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS gadgets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            price REAL NOT NULL,
+            image_url TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+
+    connection.commit()
+
+def add_gadget(connection, user_id, title, description, price, image_url=None):
+    cursor = connection.cursor()
+    query = '''INSERT INTO gadgets (user_id, title, description, price, image_url) VALUES (?, ?, ?, ?, ?)'''
+    cursor.execute(query, (user_id, title, description, price, image_url))
+    connection.commit()
+
+def get_gadget(connection, gadget_id):
+    cursor = connection.cursor()
+    query = '''SELECT * FROM gadgets WHERE id = ?'''
+    cursor.execute(query, (gadget_id,))
+    return cursor.fetchone()
+
+def get_user_gadgets(connection, user_id):
+    cursor = connection.cursor()
+    query = '''SELECT * FROM gadgets WHERE user_id = ?'''
+    cursor.execute(query, (user_id,))
+    return cursor.fetchall()
+
+def get_all_gadgets(connection):
+    cursor = connection.cursor()
+    query = '''SELECT * FROM gadgets'''
+    cursor.execute(query)
+    return cursor.fetchall()
