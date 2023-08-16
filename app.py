@@ -3,10 +3,11 @@ import db
 import utils
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import validators
 
 app = Flask(__name__)
 connection = db.connect_to_database()
-app.secret_key = "SUPER-SECRET"
+app.secret_key = "askldhjas$#@s;adllfju12312!@#123"
 limiter = Limiter(app=app, key_func=get_remote_address, default_limits=["50 per minute"])
 
 @app.route('/')
@@ -70,10 +71,19 @@ def uploadGadget():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
+        gadgetImage = request.files['image']
+        if not gadgetImage or gadgetImage.filename == '':
+            flash("Image Is Required", "danger")
+            return render_template("upload-gadget.html")
+
+        if validators.allowed_file(gadgetImage.filename) or not validators.allowed_file_size(gadgetImage):
+            flash("Invalid File is Uploaded", "danger")
+            return render_template("upload-gadget.html")
+
         title = request.form['title']
         description = request.form['description']
         price = request.form['price']
-        gadgetImage = request.files['image']
+    
         image_url = f"uploads/{gadgetImage.filename}"
         gadgetImage.save("static/" + image_url)
         user_id = session['user_id']
