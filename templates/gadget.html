@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-		<title>$title$</title>
+		<title>{{gadget[2]}}</title>
 	</head>
 	<body class="">
 		<div class="container-fluid">
@@ -14,12 +14,12 @@
 				<div class="col-md-9 col-lg-9 form-container p-4 mt-5 me-1">
 					<div class="row mb-3">
 						<div class="col-3">
-							<img src="$image$" alt="" width="150" class="img-fluid" />
+							<img src="{{url_for('static', filename=gadget[5])}}" alt="" width="150" class="img-fluid" />
 						</div>
 						<div class="col">
-							<h2>$title$</h2>
-							<p>$description$</p>
-							<small>$price$</small>
+							<h2>{{gadget[2]}}</h2>
+							<p>{{gadget[3]}}</p>
+							<small>{{gadget[4]}}</small>
 						</div>
 					</div>
 					<hr />
@@ -28,12 +28,12 @@
 						<div class="col-md-12 col-lg-12 py-2 px-3 mt-1 border border-3">
 							<h5>{{comment[0]}} | <small>{{comment[2]}}</small></h5>
 							<hr />
-							<p>{{comment[1] | safe}}</p>
+							<p>{{comment[1]}}</p>
 						</div>
 						{% endfor %}
 					</div>
 					<hr />
-					<form class="login-form" method="post" action="{{ url_for('addComment', gadget_id=$id$) }}">
+					<form class="login-form" method="post" action="{{ url_for('addComment', gadget_id=gadget[0]) }}">
 						<div class="mb-3">
 							<textarea
 								type=""

@@ -8,9 +8,6 @@ import validators
 app = Flask(__name__)
 connection = db.connect_to_database()
 app.secret_key = "askldhjas$#@s;adllfju12312!@#123"
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=False  # This disables HttpOnly flag for session cookies
-)
 limiter = Limiter(app=app, key_func=get_remote_address, default_limits=["50 per minute"])
 
 @app.route('/')
@@ -101,23 +98,7 @@ def getGadget(gadget_id):
 	gadget = db.get_gadget(connection, gadget_id)
 	comments = db.get_comments_for_gadget(connection, gadget[0])
 
-	# Create a dictionary to map placeholders to actual values
-	replacement_dict = {
-		"$title$": gadget[2],
-		"$description$": gadget[3],
-		"$price$": str(gadget[4]),
-		"$id$": str(gadget[0]),
-		"$image$": url_for("static", filename=gadget[5])
-	}
-	
-	with open('templates/gadget.html') as file:
-		template_content = file.read()
-		# Replace placeholders in the template content using the dictionary
-		for placeholder, value in replacement_dict.items():
-			template_content = template_content.replace(placeholder, value)
-
-		# Render the template with replaced values and comments
-		return render_template_string(template_content, comments=comments)
+	return render_template("gadget.html", gadget=gadget, comments=comments)
 
 @app.route('/add-comment/<gadget_id>', methods=['POST'])
 def addComment(gadget_id):
