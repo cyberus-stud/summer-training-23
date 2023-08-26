@@ -101,7 +101,6 @@ def uploadGadget():
 
 @app.route('/gadget/<gadget_id>',methods=['GET','POST'])
 def getGadget(gadget_id):
-    	
 	# Retrieve gadget information and comments from the database
 	gadget = db.get_gadget(connection, gadget_id)
 	comments = db.get_comments_for_gadget(connection, gadget[0])
@@ -117,20 +116,22 @@ def addComment(gadget_id):
 
 @app.route('/buy-gadget/<gadget_id>',methods=['POST'])
 def buy_item(gadget_id):
-    price = request.form.get('price')
     gadget = db.get_gadget(connection, gadget_id)
-	# check if the gadget is already sold 
+    # check if the gadget is already sold 
     is_sold = db.is_gadget_sold(connection,gadget_id)
     if is_sold == 0:
-        if gadget:
-            db.mark_gadget_as_sold(connection, gadget[0], price)
-            flash(f"Congratulations You have bought the item with ${price}","success")
+       if gadget:
+            db.mark_gadget_as_sold(connection, gadget[0])
+            flash(f"Congratulations You have bought the item !","success")
             return redirect(url_for("getGadget", gadget_id=gadget_id))
-        else:
+       else:
             return redirect(url_for("getGadget", gadget_id=gadget_id))
     else:
         flash("Sorry the item is already sold", "danger")
-        return redirect(url_for('getGadget', gadget_id=gadget_id))
+        return redirect(url_for('getGadget', gadget_id=gadget_id))	    
+
+    
+
 
 
 @app.route('/profile')
@@ -141,10 +142,10 @@ def profile():
 	flash("You are Not Logged In", "danger")
 	return redirect(url_for("login"))
 
-@app.route('/withdraw/<username>')
-def withdraw(username):
+@app.route('/withdraw')
+def withdraw():
 	if 'username' in session:
-		return render_template("withdraw.html", user=db.get_user(connection, username))
+		return render_template("withdraw.html", user=db.get_user(connection, session['username']))
 
 	flash("You are Not Logged In", "danger")
 	return redirect(url_for("login"))

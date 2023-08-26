@@ -74,12 +74,6 @@ def add_gadget(connection, user_id, title, description, price, image_url=None):
     cursor.execute(query, (user_id, title, description, price, image_url))
     connection.commit()
 
-def get_gadget(connection, gadget_id):
-    cursor = connection.cursor()
-    query = '''SELECT * FROM gadgets WHERE id = ?'''
-    cursor.execute(query, (gadget_id,))
-    return cursor.fetchone()
-
 #*****************************************************************
 # A function that checks if the item is sold 
 def is_gadget_sold(connection, gadget_id):
@@ -88,6 +82,12 @@ def is_gadget_sold(connection, gadget_id):
     cursor.execute(query, (gadget_id,))
     return cursor.fetchone()[0]
 #***************************************************************** 
+
+def get_gadget(connection, gadget_id):
+    cursor = connection.cursor()
+    query = '''SELECT * FROM gadgets WHERE id = ?'''
+    cursor.execute(query, (gadget_id,))
+    return cursor.fetchone()
 
 def get_user_gadgets(connection, user_id):
     cursor = connection.cursor()
@@ -101,7 +101,7 @@ def get_all_gadgets(connection):
     cursor.execute(query)
     return cursor.fetchall()
 
-def mark_gadget_as_sold(connection, gadget_id, price):
+def mark_gadget_as_sold(connection, gadget_id):
     cursor = connection.cursor()
 
     # Retrieve gadget information
@@ -111,7 +111,6 @@ def mark_gadget_as_sold(connection, gadget_id, price):
 
     if gadget_data:
         gadget_price, user_id = gadget_data
-        
 
         # Update gadget as sold
         update_query = '''UPDATE gadgets SET is_sold = 1 WHERE id = ?'''
@@ -120,7 +119,7 @@ def mark_gadget_as_sold(connection, gadget_id, price):
 
         # Update owner's balance
         update_balance_query = '''UPDATE users SET balance = balance + ? WHERE id = ?'''
-        cursor.execute(update_balance_query, (price, user_id))
+        cursor.execute(update_balance_query, (gadget_price, user_id))
         connection.commit()
 
 
