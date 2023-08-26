@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+		<title>{{ user[1] }} - Profile</title>
+	</head>
+	<body class="centered-body">
+		<div class="container-fluid">
+			{% include 'includes/alert.html' %}
+			<div class="row justify-content-center">
+				<div class="col-md-6 col-lg-4 form-container p-4 mt-5 me-1">
+					<div class="row">
+						<div class="col">
+							<h2>Withdrawing</h2>
+							<p>${{ user[3] }}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/close-all-alerts.js') }}"></script>
+	</body>
+</html>

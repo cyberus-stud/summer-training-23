@@ -11,7 +11,8 @@ def init_db(connection):
 		CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT NOT NULL UNIQUE,
-			password TEXT NOT NULL
+			password TEXT NOT NULL,
+			balance REAL NOT NULL DEFAULT 0.0
 		)
 	''')
 
@@ -47,6 +48,7 @@ def seed_admin_user(connection):
     if not admin_user:
         add_user(connection, admin_username, admin_password)
         print("Admin user seeded successfully.")
+
 def init_gadget_table(connection):
     cursor = connection.cursor()
 
@@ -78,6 +80,15 @@ def get_gadget(connection, gadget_id):
     cursor.execute(query, (gadget_id,))
     return cursor.fetchone()
 
+#*****************************************************************
+# A function that checks if the item is sold 
+def is_gadget_sold(connection, gadget_id):
+    cursor = connection.cursor()
+    query = '''SELECT is_sold FROM gadgets WHERE id = ?'''
+    cursor.execute(query, (gadget_id,))
+    return cursor.fetchone()[0]
+#***************************************************************** 
+
 def get_user_gadgets(connection, user_id):
     cursor = connection.cursor()
     query = '''SELECT * FROM gadgets WHERE user_id = ?'''
@@ -90,11 +101,27 @@ def get_all_gadgets(connection):
     cursor.execute(query)
     return cursor.fetchall()
 
-def mark_gadget_as_sold(connection, gadget_id):
+def mark_gadget_as_sold(connection, gadget_id, price):
     cursor = connection.cursor()
-    query = '''UPDATE gadgets SET is_sold = 1 WHERE id = ?'''
-    cursor.execute(query, (gadget_id,))
-    connection.commit()
+
+    # Retrieve gadget information
+    gadget_query = '''SELECT price, user_id FROM gadgets WHERE id = ?'''
+    cursor.execute(gadget_query, (gadget_id,))
+    gadget_data = cursor.fetchone()
+
+    if gadget_data:
+        gadget_price, user_id = gadget_data
+        
+
+        # Update gadget as sold
+        update_query = '''UPDATE gadgets SET is_sold = 1 WHERE id = ?'''
+        cursor.execute(update_query, (gadget_id,))
+        connection.commit()
+
+        # Update owner's balance
+        update_balance_query = '''UPDATE users SET balance = balance + ? WHERE id = ?'''
+        cursor.execute(update_balance_query, (price, user_id))
+        connection.commit()
 
 
 def init_comments_table(connection):

@@ -11,15 +11,23 @@
 		<div class="container-fluid">
 			{% include 'includes/alert.html' %}
 			<div class="row justify-content-center">
-				<div class="col-md-9 col-lg-9 form-container p-4 mt-5 me-1">
+				<div
+					class="col-md-9 col-lg-9 form-container p-4 mt-5 me-1 border border-3 border-{{ 'danger' if gadget[6] else 'success'}}"
+				>
 					<div class="row mb-3">
 						<div class="col-3">
 							<img src="{{url_for('static', filename=gadget[5])}}" alt="" width="150" class="img-fluid" />
 						</div>
 						<div class="col">
-							<h2>{{gadget[2]}}</h2>
-							<p>{{gadget[3]}}</p>
-							<small>{{gadget[4]}}</small>
+							<form action="{{ url_for('buy_item', gadget_id=gadget[0])}}" method="post">
+								<h2>{{gadget[2]}}</h2>
+								<p>{{gadget[3]}}</p>
+								<small>${{gadget[4]}}</small>
+								<!-- Sending the price of the item in a hidden input -->
+
+								<input type="hidden" name="price" value="{{gadget[4]}}" />
+								<button class="btn btn-primary float-end">Buy It</button>
+							</form>
 						</div>
 					</div>
 					<hr />

@@ -4,101 +4,109 @@ import utils
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import validators
+import os
 
 app = Flask(__name__)
 connection = db.connect_to_database()
-app.secret_key = "askldhjas$#@s;adllfju12312!@#123"
+app.secret_key = "zs9XYCbTPKvux46UJckflw"
 limiter = Limiter(app=app, key_func=get_remote_address, default_limits=["50 per minute"])
 
 @app.route('/')
 def index():
-    if 'username' in session:
-        if session['username'] == 'admin':
-            return list(db.get_all_users(connection))
-        else:
-            return render_template("index.html", gadgets=db.get_all_gadgets(connection))
-    return "You are not logged in."
+	if 'username' in session:
+		if session['username'] == 'admin':
+			return render_template("index.html", gadgets=db.get_all_gadgets(connection)) #f"Welcome, {session['username']}!"
+			#return list(db.get_all_users(connection))
+		else:
+			return render_template("index.html", gadgets=db.get_all_gadgets(connection)) #f"Welcome, {session['username']}!"
+	return "You are not logged in."
 
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute") 
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+	if request.method == 'POST':
+		username = request.form['username']
+		password = request.form['password']
 
-        user = db.get_user(connection, username)
-        
-        if user:
-            if utils.is_password_match(password, user[2]):
-                session['username'] = user[1]
-                session['user_id'] = user[0]
-                return redirect(url_for('index'))
-            else:
-                flash("Password dose not match", "danger")
-                return render_template('login.html')
-            
-        else:
-            flash("Invalid username", "danger")
-            return render_template('login.html')
+		user = db.get_user(connection, username)
+		
+		if user:
+			if utils.is_password_match(password, user[2]):
+				session['username'] = user[1]
+				session['user_id'] = user[0]
+				return redirect(url_for('index'))
+			else:
+				flash("Password dose not match", "danger")
+				return render_template('login.html')
+			
+		else:
+			flash("Invalid username", "danger")
+			return render_template('login.html')
 
-    return render_template('login.html')
+	return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("10 per minute") 
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if not utils.is_strong_password(password):
-            flash("Sorry You Entered a weak Password Please Choose a stronger one", "danger")
-            return render_template('register.html')
-        
-        user = db.get_user(connection, username)
-        if user:
-            flash("Username already exists. Please choose a different username.", "danger")
-            return render_template('register.html')
-        else:
-            db.add_user(connection, username, password)
-            return redirect(url_for('login'))
+	if request.method == 'POST':
+		username = request.form['username']
+		password = request.form['password']
+		# if not utils.is_strong_password(password):
+		# 	flash("Sorry You Entered a weak Password Please Choose a stronger one", "danger")
+		# 	return render_template('register.html')
+		
+		user = db.get_user(connection, username)
+		if user:
+			flash("Username already exists. Please choose a different username.", "danger")
+			return render_template('register.html')
+		else:
+			db.add_user(connection, username, password)
+			return redirect(url_for('login'))
 
-    return render_template('register.html')
+	return render_template('register.html')
 
-@app.route('/upload-gadget', methods=['GET', 'POST'])
-@limiter.limit("10 per minute") 
+@app.route('/logout')
+def logout():
+	session.pop('username', None)
+	return redirect(url_for('index'))
+
+@app.route('/upload-gadget', methods = ['GET','POST'])
 def uploadGadget():
-    if not 'user_id' in session:
-        flash("Please Login to do this action", "danger")
-        return redirect(url_for('login'))
+	if request.method == 'POST':
+		if not 'user_id' in session:
+			flash("You Are Not Logged In", "danger")
+			return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        gadgetImage = request.files['image']
-        if not gadgetImage or gadgetImage.filename == '':
-            flash("Image Is Required", "danger")
-            return render_template("upload-gadget.html")
+		gadgetImage = request.files['image']
+		if not gadgetImage or gadgetImage.filename == '':
+			flash("Image Is Required", "danger")
+			return render_template("upload-gadget.html")
 
-        if not validators.allowed_file(gadgetImage.filename) or not validators.allowed_file_size(gadgetImage):
-            flash("Invalid File is Uploaded", "danger")
-            return render_template("upload-gadget.html")
+		if  not (validators.allowed_file(gadgetImage.filename)) or not validators.allowed_file_size(gadgetImage):
+			flash("Invalid File is Uploaded", "danger")
+			return render_template("upload-gadget.html")
 
-        title = request.form['title']
-        description = request.form['description']
-        price = request.form['price']
-    
-        image_url = f"uploads/{gadgetImage.filename}"
-        gadgetImage.save("static/" + image_url)
-        user_id = session['user_id']
-        db.add_gadget(connection, user_id, title, description, price, image_url)
-        return redirect(url_for('index'))
-    return render_template('upload-gadget.html')
+		title = request.form['title']
+		description = request.form['description']
+		price = request.form['price']
 
+		image_url = f"uploads/{gadgetImage.filename}"
+		gadgetImage.save(os.path.join("static",image_url))
+		user_id = session['user_id']
 
-@app.route('/gadget/<gadget_id>')
+		db.add_gadget(connection, user_id, title, description, price, image_url)
+		return redirect(url_for('index'))
+
+	return render_template("upload-gadget.html")
+
+@app.route('/gadget/<gadget_id>',methods=['GET','POST'])
 def getGadget(gadget_id):
+    	
 	# Retrieve gadget information and comments from the database
 	gadget = db.get_gadget(connection, gadget_id)
 	comments = db.get_comments_for_gadget(connection, gadget[0])
 
-	return render_template("gadget.html", gadget=gadget, comments=comments)
+	return render_template('gadget.html', gadget=gadget, comments=comments)
 
 @app.route('/add-comment/<gadget_id>', methods=['POST'])
 def addComment(gadget_id):
@@ -107,15 +115,43 @@ def addComment(gadget_id):
 	db.add_comment(connection, gadget_id, user_id, text)
 	return redirect(url_for("getGadget", gadget_id=gadget_id))
 
+@app.route('/buy-gadget/<gadget_id>',methods=['POST'])
+def buy_item(gadget_id):
+    price = request.form.get('price')
+    gadget = db.get_gadget(connection, gadget_id)
+	# check if the gadget is already sold 
+    is_sold = db.is_gadget_sold(connection,gadget_id)
+    if is_sold == 0:
+        if gadget:
+            db.mark_gadget_as_sold(connection, gadget[0], price)
+            flash(f"Congratulations You have bought the item with ${price}","success")
+            return redirect(url_for("getGadget", gadget_id=gadget_id))
+        else:
+            return redirect(url_for("getGadget", gadget_id=gadget_id))
+    else:
+        flash("Sorry the item is already sold", "danger")
+        return redirect(url_for('getGadget', gadget_id=gadget_id))
 
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    return redirect(url_for('index'))
+
+@app.route('/profile')
+def profile():
+	if 'username' in session:
+		return render_template("profile.html", user=db.get_user(connection, session['username']))
+
+	flash("You are Not Logged In", "danger")
+	return redirect(url_for("login"))
+
+@app.route('/withdraw/<username>')
+def withdraw(username):
+	if 'username' in session:
+		return render_template("withdraw.html", user=db.get_user(connection, username))
+
+	flash("You are Not Logged In", "danger")
+	return redirect(url_for("login"))
 
 if __name__ == '__main__':
-    db.init_db(connection)
-    db.seed_admin_user(connection)
-    db.init_gadget_table(connection)
-    db.init_comments_table(connection)
-    app.run(debug=True)
+	db.init_db(connection)
+	db.init_gadget_table(connection)
+	db.init_comments_table(connection)
+	db.seed_admin_user(connection)
+	app.run(debug=True)
